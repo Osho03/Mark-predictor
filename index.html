@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Mark Predictor</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <div class="container">
+    <button onclick="toggleMode()" id="modeBtn" style="float: right;">🌙 Dark Mode</button>
+    <h1>📘 Mark Predictor</h1>
+
+    <!-- Input Fields -->
+    <input type="number" id="hours" placeholder="Study Hours"><br><br>
+    <input type="number" id="sleep" placeholder="Sleep Hours"><br><br>
+
+    <select id="focus">
+      <option value="3">High Focus</option>
+      <option value="2">Medium Focus</option>
+      <option value="1">Low Focus</option>
+    </select><br><br>
+
+    <input type="number" id="distraction" placeholder="Distraction Time (hours)"><br><br>
+    <input type="number" id="target" placeholder="Your Target Marks"><br><br>
+
+    <!-- Predict Button -->
+    <button onclick="getPrediction()">Predict</button>
+
+    <!-- Output -->
+    <p id="result"></p>
+    <p id="tip" style="margin-top: 10px; font-size: 14px; color: #444;"></p>
+    <p id="gapTip" style="margin-top: 5px; font-size: 14px; color: #444;"></p>
+
+    <!-- Motivational Quote -->
+    <div class="quote-box">
+      <p id="quote">"Success is no accident. It is hard work and learning."</p>
+      <button onclick="nextQuote()">💡 Next Quote</button>
+    </div>
+  </div>
+
+  <!-- JavaScript -->
+  <script>
+    async function getPrediction() {
+      const hours = parseFloat(document.getElementById("hours").value);
+      const sleep = parseFloat(document.getElementById("sleep").value);
+      const focus = parseFloat(document.getElementById("focus").value);
+      const distraction = parseFloat(document.getElementById("distraction").value);
+      const target = parseFloat(document.getElementById("target").value);
+
+      const res = await fetch("/predict", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ hours, sleep, focus, distraction })
+      });
+
+      const data = await res.json();
+      const mark = data.predicted_marks.toFixed(2);
+      document.getElementById("result").innerText = "Predicted Marks: " + mark;
+
+      // Emoji + Tip
+      let emoji = "📘";
+      let tip = "";
+
+      if (mark >= 80) {
+        emoji = "🎉";
+        tip = "Outstanding! You're on the right path!";
+      } else if (mark >= 60) {
+        emoji = "✅";
+        tip = "Doing good. Focus a bit more!";
+      } else if (mark >= 40) {
+        emoji = "💡";
+        tip = "You can improve! Reduce distractions.";
+      } else {
+        emoji = "🔥";
+        tip = "Work hard! Study smart and sleep well.";
+      }
+
+      document.getElementById("result").innerText += ` ${emoji}`;
+      document.getElementById("tip").innerText = tip;
+
+      // Gap Tip
+      let gapTip = "";
+      if (!isNaN(target)) {
+        const diff = target - mark;
+        if (diff <= 0) {
+          gapTip = "🎯 You're on track or ahead of your target!";
+        } else if (diff <= 10) {
+          gapTip = "⚡ Almost there! Just a bit more focus!";
+        } else {
+          gapTip = "📚 Keep pushing! You can close the gap with consistent effort.";
+        }
+        document.getElementById("gapTip").innerText = gapTip;
+      } else {
+        document.getElementById("gapTip").innerText = "";
+      }
+    }
+
+    const quotes = [
+      "Success is no accident. It is hard work and learning.",
+      "Push yourself, because no one else is going to do it for you.",
+      "The secret of getting ahead is getting started.",
+      "Study now, shine later.",
+      "Hard work beats talent when talent doesn't work hard.",
+      "Dream big, work hard, stay focused.",
+      "Discipline is the bridge between goals and accomplishment."
+    ];
+
+    let index = 0;
+    function nextQuote() {
+      index = (index + 1) % quotes.length;
+      document.getElementById("quote").innerText = `"${quotes[index]}"`;
+    }
+
+    function toggleMode() {
+      const body = document.body;
+      body.classList.toggle("dark");
+
+      const modeBtn = document.getElementById("modeBtn");
+      if (body.classList.contains("dark")) {
+        modeBtn.innerText = "☀️ Light Mode";
+      } else {
+        modeBtn.innerText = "🌙 Dark Mode";
+      }
+    }
+  </script>
+</body>
+</html>
